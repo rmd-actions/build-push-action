@@ -91,7 +91,7 @@ jobs:
       -
         name: Docker meta
         id: meta
-        uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6.0.0
+        uses: docker/metadata-action@80c7e94dd9b9319bd5eb7a0e0fe9291e23a2a2e9 # v6.1.0
         with:
           images: ${{ env.REGISTRY_SLUG || inputs.slug }}
           tags: |
@@ -103,7 +103,7 @@ jobs:
         uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4.0.0
       -
         name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
+        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
         with:
           version: ${{ matrix.buildx_version }}
           buildkitd-config: /tmp/buildkitd.toml
@@ -114,11 +114,12 @@ jobs:
       -
         name: Login to Registry
         if: github.event_name != 'pull_request' && (inputs.type == 'remote' || env.REGISTRY_USER != '')
-        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           registry: ${{ env.REGISTRY_FQDN || inputs.registry }}
           username: ${{ env.REGISTRY_USER || secrets.registry_username }}
           password: ${{ env.REGISTRY_PASSWORD || secrets.registry_password }}
+          scope: ${{ inputs.type == 'remote' && inputs.registry == '' && '@push' || '' }}
       -
         name: Build and push
         uses: ./
@@ -131,16 +132,3 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=registry,ref=${{ env.REGISTRY_SLUG || inputs.slug }}:master
           cache-to: type=inline
-      -
-        name: Inspect image
-        env:
-          SLUG: ${{ env.REGISTRY_SLUG || inputs.slug }}
-        run: |
-          docker pull ${SLUG}:${{ steps.meta.outputs.version }}
-          docker image inspect ${SLUG}:${{ steps.meta.outputs.version }}
-      -
-        name: Check manifest
-        env:
-          SLUG: ${{ env.REGISTRY_SLUG || inputs.slug }}
-        run: |
-          docker buildx imagetools inspect ${SLUG}:${{ steps.meta.outputs.version }} --format '{{json .}}'
